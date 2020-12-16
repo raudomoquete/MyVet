@@ -112,7 +112,7 @@ namespace MyVet.Web.Data
         {
             if (!_dataContext.Owners.Any())
             {
-                _dataContext.Owners.Add(new Owner { user = user });
+                _dataContext.Owners.Add(new Owner { User = user });
                 await _dataContext.SaveChangesAsync();
             }
         }

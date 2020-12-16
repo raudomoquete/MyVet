@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using MyVet.Web.Data.Entities;
+using MyVet.Web.Models;
 using System.Threading.Tasks;
 
 namespace MyVet.Web.Helpers
@@ -11,5 +12,7 @@ namespace MyVet.Web.Helpers
         Task CheckRoleAsync(string roleName); //verifica el rol y si no esxite lo crea, este metodo ha incluir en el seed
         Task AddUserToRoleAsync(User user, string roleName);
         Task<bool> IsUserInRoleAsync(User user, string roleName);
+        Task<SignInResult> LoginAsync(LoginViewModel model);
+        Task LogoutAsync();
     }
 }
