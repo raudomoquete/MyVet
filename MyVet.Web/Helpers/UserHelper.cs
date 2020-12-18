@@ -15,7 +15,7 @@ namespace MyVet.Web.Helpers
         private readonly SignInManager<User> _signInManager;
 
         public UserHelper(
-            UserManager<User>userManager,
+            UserManager<User> userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<User> signInManager)
         {
@@ -37,7 +37,7 @@ namespace MyVet.Web.Helpers
         public async Task CheckRoleAsync(string roleName)
         {
             var roleExists = await _roleManager.RoleExistsAsync(roleName);
-            if (roleExists)
+            if (!roleExists)
             {
                 await _roleManager.CreateAsync(new IdentityRole
                 {

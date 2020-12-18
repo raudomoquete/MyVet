@@ -11,7 +11,7 @@ using MyVet.Web.Data.Entities;
 
 namespace MyVet.Web.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Administrator")]
     public class ManagersController : Controller
     {
         private readonly DataContext _context;

@@ -27,8 +27,8 @@ namespace MyVet.Web.Data
             //asi forzo menos la maquina
             await _dataContext.Database.EnsureCreatedAsync();
             await CheckRoles();
-            var manager = await CheckUserAsync("1010", "Raudo", "Moquete", "sanchezz1ero@gmail.com", "8293056303", "m6 #19, El Brisal", "Admin");
-            var customer = await CheckUserAsync("2020", "Raudo", "Moquete", "sanchezz09@hotmail.com", "8293056303", "m6 #19, El Brisal", "Customer");
+            var manager = await CheckUserAsync("1010","Raudo","Moquete","sanchezz1ero@gmail.com","8293056303","m6 #19, El Brisal", "Administrator");
+            var customer = await CheckUserAsync("2020","Raudo","Moquete","sanchezz09@hotmail.com","8293056303","m6 #19, El Brisal","Customer");
             await CheckPetTypesAsync();
             await CheckServiceTypesAsync();
             await CheckOwnerAsync(customer);
@@ -39,7 +39,7 @@ namespace MyVet.Web.Data
 
         private async Task CheckRoles()
         {
-            await _userHelper.CheckRoleAsync("Admin");
+            await _userHelper.CheckRoleAsync("Administrator");
             await _userHelper.CheckRoleAsync("Customer");
         }
 
@@ -120,7 +120,7 @@ namespace MyVet.Web.Data
         {
             if (!_dataContext.Managers.Any())
             {
-                _dataContext.Managers.Add(new Manager { user = user });
+                _dataContext.Managers.Add(new Manager { User = user });
                 await _dataContext.SaveChangesAsync();
             }
         }
