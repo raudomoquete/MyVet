@@ -57,6 +57,9 @@ namespace MyVet.Web
             //esto facilita las pruebas unitarias
             //que lo injecte con interfaces me permite hacer modificaciones en tiempo de ejecucion
             //services.AddSingleton<UserHelper>(); lo injecta una sola vez pero lo deja permanente en la ejecucion del projecto pero siempre se quedara cargado en la memoria
+            services.AddScoped<ICombosHelper, CombosHelper>();
+            services.AddScoped<IConverterHelper, ConverterHelper>();
+            services.AddScoped<IImageHelper, ImageHelper>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }

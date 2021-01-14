@@ -65,5 +65,63 @@
 }
 else
 {
-    <h4>List pets here.</h4 >
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.Pets.FirstOrDefault().Name)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Pets.FirstOrDefault().Race)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Pets.FirstOrDefault().ImageUrl)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Pets.FirstOrDefault().PetType.Name)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Pets.FirstOrDefault().BornLocal)
+                </th>
+                <th>
+                    * Histories
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Pets.FirstOrDefault().Remarks)
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Pets)
+            {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Race)
+                </td>
+                <td>
+                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                    {
+                        <img src="@Url.Content(item.ImageUrl)" alt="Image" style="width:200px;height:200px;max-width:100%; height:auto;" />
+                    }
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PetType.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.BornLocal)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Histories.Count)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Remarks)
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
 }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +20,21 @@ namespace MyVet.Web.Controllers
     {
         private readonly DataContext _context;
         private readonly IUserHelper _userHelper;
+        private readonly ICombosHelper _combosHelper;
+        private readonly IConverterHelper _converterHelper;
+        private readonly IImageHelper _imageHelper;
 
-        public OwnersController(DataContext context, IUserHelper userHelper)
+        public OwnersController(DataContext context,
+            IUserHelper userHelper,
+            ICombosHelper combosHelper,
+            IConverterHelper converterHelper,
+            IImageHelper imageHelper)
         {
             _context = context;
             _userHelper = userHelper;
+            _combosHelper = combosHelper;
+            _converterHelper = converterHelper;
+            _imageHelper = imageHelper;
         }
 
         // GET: Owners  Este metodo podria tambn hacerse no asincrono, para ello se comenta todo este metodo
@@ -107,7 +119,7 @@ namespace MyVet.Web.Controllers
 
                     try
                     {
-                        await _context.SaveChangesAsync();
+                        await _context.SaveChangesAsync(); //nunca hacer savechanges sin un try catch
                         return RedirectToAction(nameof(Index));
                     }
                     catch (Exception ex)
@@ -206,6 +218,195 @@ namespace MyVet.Web.Controllers
         private bool OwnerExists(int id)
         {
             return _context.Owners.Any(e => e.Id == id);
+        }
+
+        public async Task<IActionResult> AddPet(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }            
+            
+            //hay dos formas de buscar FirstOrDefault o FindAsync(este busca por la clave primaria de la tabla, por eso es mas eficiente)
+            //si quiero traer registros relacionados debe ser con FirstOrDefault y si no hay inner join, usar findasync 
+            var owner = await _context.Owners.FindAsync(id.Value);                
+            if (owner == null)
+            {
+                return NotFound();
+            }
+
+            //Objecto de PetViewModel
+            var model = new PetViewModel
+            {
+                Born = DateTime.Today,
+                OwnerId = owner.Id,
+                PetTypes = _combosHelper.GetComboPetTypes() //aqui injecto el combosHelper y tengo el metodo que me lo retorna
+            };
+
+            return View(model);
+        }
+
+        //sobrecarga del metodo AddPet
+        [HttpPost]
+        public async Task<IActionResult> AddPet(PetViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var path = string.Empty;
+
+                if(model.ImageFile != null)
+                {
+                    path = await _imageHelper.UploadImageAsync(model.ImageFile);
+                    //para que no se mezclen los nombres de las imagenes                  
+                }
+
+                //para usar el metodo toPetAsync debemos confirgurar la injeccion en el startup
+                //agregando el converterHelper
+                var pet = await _converterHelper.ToPetAsync(model, path, true);
+                _context.Pets.Add(pet);
+                await _context.SaveChangesAsync();
+                return RedirectToAction($"Details/{model.OwnerId}"); //aqui nos devolvemos a los details de ese propietario
+            }
+
+            model.PetTypes = _combosHelper.GetComboPetTypes(); //esto lo hacemos en el add y edit Pet para cargar la lista de tipos de mascota en ambos casos
+            return View(model);
+        }
+
+        public async Task<IActionResult> EditPet(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            //hay dos formas de buscar FirstOrDefault o FindAsync(este busca por la clave primaria de la tabla, por eso es mas eficiente)
+            //si quiero traer registros relacionados debe ser con FirstOrDefault y si no hay inner join, usar findasync 
+            var pet = await _context.Pets
+                .Include(p => p.Owner)
+                .Include(p => p.PetType)
+                .FirstOrDefaultAsync(p => p.Id == id); //AQUI CAMBIO POR FIRSORDEFAULT PORQUE INCLUIMOS VARIOS CAMPOS DE LA BD
+            if (pet == null)
+            {
+                return NotFound();
+            }
+
+            return View(_converterHelper.ToPetViewModel(pet));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditPet(PetViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var path = model.ImageUrl;
+
+                if (model.ImageFile != null)
+                {
+                    path = await _imageHelper.UploadImageAsync(model.ImageFile);
+                }
+
+                var pet = await _converterHelper.ToPetAsync(model, path, false);
+                _context.Pets.Update(pet);
+                await _context.SaveChangesAsync();
+                return RedirectToAction($"Details/{model.OwnerId}");
+
+            }
+
+            model.PetTypes = _combosHelper.GetComboPetTypes();
+            return View(model);
+        }
+
+        public async Task<IActionResult> DetailsPet(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var pet = await _context.Pets
+                .Include(p => p.Owner)
+                .ThenInclude(o => o.User)
+                .Include(p => p.Histories)
+                .ThenInclude(h => h.ServiceType)
+                .FirstOrDefaultAsync(o => o.Id == id.Value);
+            if (pet == null)
+            {
+                return NotFound();
+            }
+
+            return View(pet);
+        }
+
+        public async Task<IActionResult> AddHistory(int? id) //este es el id de la mascota a la que se le agrega la historia
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var pet = await _context.Pets.FindAsync(id.Value); //FindAsync porque buscamos si la mascota existe, no objetos relacionados
+            if (pet == null)
+            {
+                return NotFound();
+            }
+
+            var model = new HistoryViewModel //si la mascota existe creamos el modelo
+            {
+                Date = DateTime.Now, //la fecha es .now porque es la que se mostrara en la vista
+                PetId = pet.Id,
+                ServiceTypes = _combosHelper.GetComboServiceTypes(),
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddHistory(HistoryViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var history = await _converterHelper.ToHistoryAsync(model, true);
+                _context.Histories.Add(history);
+                await _context.SaveChangesAsync();
+                return RedirectToAction($"{nameof(DetailsPet)}/{model.PetId}");
+            }
+
+            model.ServiceTypes = _combosHelper.GetComboServiceTypes();
+            return View(model);
+        }
+
+        public async Task<IActionResult> EditHistory(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var history = await _context.Histories
+                .Include(h => h.Pet)
+                .Include(h => h.ServiceType)
+                .FirstOrDefaultAsync(p => p.Id == id.Value);
+            if (history == null)
+            {
+                return NotFound();
+            }
+
+            return View(_converterHelper.ToHistoryViewModel(history));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditHistory(HistoryViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var history = await _converterHelper.ToHistoryAsync(model, false);
+                _context.Histories.Update(history);
+                await _context.SaveChangesAsync();
+                return RedirectToAction($"{nameof(DetailsPet)}/{model.PetId}");
+            }
+
+            model.ServiceTypes = _combosHelper.GetComboServiceTypes();
+            return View(model);
         }
     }
 }
