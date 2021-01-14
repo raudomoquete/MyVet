@@ -46,7 +46,7 @@
         <div class="col-md-4">
             @if (!string.IsNullOrEmpty(Model.ImageUrl))
             {
-                <img src="@Url.Content(Model.ImageUrl)"alt="Image" style="width:300px;height:300px;max-height: 100%; width: auto;" />
+                <img src="@Url.Content(Model.ImageUrl)" alt="Image" style="width:300px;height:300px;max-height: 100%; width: auto;" />
             }
         </div>
     </div>
@@ -85,25 +85,48 @@ else
         <tbody>
             @foreach (var item in Model.Histories)
             {
-            <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Date)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.ServiceType.Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Description)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Remarks)
-                </td>
-                <td>
-                    <a asp-action="EditHistory" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
-                    <a asp-action="DeleteHistory" asp-route-id="@item.Id" class="btn btn-danger">Delete</a>
-                </td>
-            </tr>
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Date)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.ServiceType.Name)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Description)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Remarks)
+                    </td>
+                    <td>
+                        <a asp-action="EditHistory" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
+                        <button data-id="@item.Id" class="btn btn-danger deleteItem" data-toggle="modal" data-target="#deleteDialog">Delete</button>
+                    </td>
+                </tr>
             }
         </tbody>
     </table>
+}
+
+<!--Delete Item-->
+<partial name="_DeleteDialog"/>
+
+@section Scripts{
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            //Delete item
+            var item_to_delete;
+
+            $('.deleteItem').click((e) => {
+                item_to_delete = e.currentTarget.dataset.id;
+            });
+
+            $("#btnYesDelete").click(function () {
+                window.location.href = '/Owners/DeleteHistory/' + item_to_delete;
+            });
+        });
+    </script>
+    <!--Implementar metodo DeleteHistory en OwnersController-->
 }
