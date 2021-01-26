@@ -7,12 +7,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using MyVet.Web.Data;
 using MyVet.Web.Data.Entities;
 using MyVet.Web.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace MyVet.Web
@@ -50,6 +52,18 @@ namespace MyVet.Web
             {
                 cfg.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
             });
+
+            services.AddAuthentication()
+                .AddCookie()
+                .AddJwtBearer(cfg =>
+                {
+                    cfg.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidIssuer = Configuration["Tokens:Issuer"],
+                        ValidAudience = Configuration["Tokens:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Tokens:key"]))
+                    };
+                });
 
             services.AddTransient<SeedDb>(); //Injeccion del seeder, esta lo injecta una sola vez, a diferencia del addScope que injecta cada vez que lo llame
             services.AddScoped<IUserHelper, UserHelper>(); //cualquier clase que use el IUserHelper en el constructor
