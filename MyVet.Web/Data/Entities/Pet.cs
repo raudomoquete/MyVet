@@ -31,7 +31,7 @@ namespace MyVet.Web.Data.Entities
         //para no guardarlas en la base de datos
         public string ImageFullPath => string.IsNullOrEmpty(ImageUrl)
             ? null //operador ternario. Es un if que dice: si no tiene img devuelva null
-            : $"https://TDB.azurewebsites.net{ImageUrl.Substring(1)}";
+            : $"https://myvetweb1.azurewebsites.net{ImageUrl.Substring(1)}";
 
         [Display(Name = "Born")]
         [DisplayFormat(DataFormatString = "{0:yyyy/MM/dd}")]
